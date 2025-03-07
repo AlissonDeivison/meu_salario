@@ -14,7 +14,6 @@ def apply_custom_styles():
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        background-color: #FFFFFF;
         border: 1px solid #E0E0E0;
         width: calc(50% - 10px); /* 2 colunas com espaçamento */
         box-sizing: border-box;

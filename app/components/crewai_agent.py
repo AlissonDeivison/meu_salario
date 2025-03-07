@@ -128,7 +128,7 @@ def ask_openai(question, context, web_info):
         response = litellm.completion(
             model="openai/gpt-4o-mini",
             messages=messages,
-            temperature=0.7,
+            temperature=0.1,
         )
 
         resposta = response.choices[0].message["content"].strip()
