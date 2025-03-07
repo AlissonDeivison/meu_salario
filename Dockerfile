@@ -26,7 +26,7 @@ COPY . .
 RUN chmod -R 755 /app/data
 
 # Expor a porta utilizada pelo Streamlit (padrão 8501)
-EXPOSE 8501
+EXPOSE 8502
 
 # Comando para iniciar a aplicação, garantindo que o Streamlit escute em todas as interfaces
-CMD ["streamlit", "run", "app/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "app/main.py", "--server.port=8502", "--server.address=0.0.0.0"]
