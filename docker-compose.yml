@@ -1,0 +1,14 @@
+services:
+  streamlit_app:
+    build: .
+    container_name: streamlit_portfolio
+    restart: unless-stopped
+    networks:
+      - net
+    ports:
+    - "8501:8501"
+
+networks:
+  net:
+    external: true
+    name: nginx-ingress_net
