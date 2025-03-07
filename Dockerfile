@@ -1,5 +1,5 @@
-# Usar imagem base do Python
-FROM python:3.9-slim
+# Usar imagem base do Python 3.10
+FROM python:3.10-slim
 
 # Atualizar pacotes do sistema (se necessário)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copiar apenas o arquivo de dependências primeiro para aproveitar o cache do Docker
-COPY requirements.txt .
+COPY requirements.txt ./
 
 # Atualizar o pip e instalar as dependências do projeto
 RUN pip install --upgrade pip && \

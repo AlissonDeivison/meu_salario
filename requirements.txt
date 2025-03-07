@@ -2,3 +2,5 @@ streamlit
 crewai
 pandas
 plotly
+litellm
+dotenv
