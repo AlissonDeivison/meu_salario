@@ -43,17 +43,13 @@ def pesquisar_na_web(query):
     Faz uma pesquisa no DuckDuckGo e retorna um resumo dos principais resultados.
     """
     try:
-        # Adicionando palavras-chave para manter a pesquisa no contexto de desenvolvimento
         query_dev = f"{query} desenvolvimento programação software"
-
         with DDGS(headers={"User-Agent": "Mozilla/5.0"}) as ddgs:
             results = ddgs.text(query_dev, max_results=5, region="br-pt")
 
-        # Verifica se há resultados antes de tentar processá-los
         if not results:
             return "⚠️ Nenhum resultado encontrado na pesquisa."
 
-        # Formata os resultados para exibição
         pesquisa_resumo = "\n".join([f"- [{res['title']}]({res['href']}): {res['body']}" for res in results])
 
         return f"🔎 Aqui estão algumas informações da web sobre desenvolvedores:\n\n{pesquisa_resumo}"
@@ -61,9 +57,9 @@ def pesquisar_na_web(query):
     except Exception as e:
         return f"⚠️ Erro ao pesquisar na web: {str(e)}"
 
-def create_agents_and_tasks():
+def create_agents_and_tasks(tipo: str):
     """
-    Cria os agentes e as tarefas para o CrewAI.
+    Cria os agentes e as tarefas para o CrewAI, considerando o tipo de resposta (resumo ou detalhado).
     """
     model_name = "gpt-4o-mini"
 
@@ -95,17 +91,17 @@ def create_agents_and_tasks():
         model=model_name,
     )
 
-    # Agente de Respostas (Usa os contextos antes de responder)
+    # Agente de Respostas (Resumido ou Detalhado)
     response_agent = Agent(
         role="Assistente de Respostas",
         goal="Responder perguntas considerando os certificados e a pesquisa na web",
-        backstory="Você é um assistente especializado em carreira e certificações de tecnologia."
+        backstory="Você é um assistente especializado em carreira e certificações de tecnologia." 
     )
 
     response_task = Task(
-        description="Responder perguntas do usuário considerando seus certificados e as informações da web.",
+        description="Responder perguntas do usuário considerando seus certificados e as informações da web.Importante: O nome do usuário é 'Alisson Deivison', você deve agir como se fosse ele e responder em primeira pessoa para quem quer que esteja perguntando. Caso a pergunta saia do contexto você deve simplesmente dizer que não pode responder ou não tem conhecimento a respeito",
         agent=response_agent,
-        expected_output="Resposta baseada nos certificados do usuário e nas informações da web sobre o mercado de trabalho.",
+        expected_output="Resposta baseada nos certificados do usuário e nas informações da web sobre o mercado de trabalho. ",
         model=model_name,
     )
 
@@ -113,38 +109,42 @@ def create_agents_and_tasks():
 
     return crew, context_task, web_search_task, response_task
 
-def ask_openai(question, context, web_info):
+def ask_openai(question, context, web_info, tipo):
     """
     Chama a API da OpenAI passando o contexto dos certificados, a pesquisa na web e a pergunta do usuário.
+    Se o tipo for 'resumo', a resposta é mais concisa.
     """
     try:
         messages = [
             {"role": "system", "content": "Você é um assistente especializado em carreiras na área de tecnologia e desenvolvimento."},
             {"role": "system", "content": f"O usuário possui as seguintes certificações relevantes:\n{context}"},
             {"role": "system", "content": f"Com base na pesquisa de mercado sobre desenvolvedores:\n{web_info}"},
+            {"role": "system", "content": "Seu nome é 'Alisson Deivison', você deve agir como se fosse ele e responder em primeira pessoa para quem quer que esteja perguntando. Caso a pergunta saia do contexto você deve simplesmente dizer que não pode responder ou não tem conhecimento a respeito"},
             {"role": "user", "content": question}
         ]
+
+        max_tokens = 300 if tipo == "resumo" else 500
         
         response = litellm.completion(
             model="openai/gpt-4o-mini",
             messages=messages,
             temperature=0.1,
+            max_tokens=max_tokens,
         )
 
         resposta = response.choices[0].message["content"].strip()
-
-        # Escapar símbolos de moeda no Markdown
         resposta_corrigida = resposta.replace("$", "\$").replace("R$", "R\$")
 
         return resposta_corrigida
     except Exception as e:
         return f"Ocorreu um erro ao chamar a API da OpenAI: {str(e)}"
 
-def kickoff(question):
+def kickoff(question, tipo):
     """
     Executa os Agentes de Contexto e Pesquisa na Web antes da OpenAI para enriquecer a resposta.
+    Ajusta a resposta conforme o tipo de consulta (resumo ou detalhado).
     """
-    crew, context_task, web_search_task, response_task = create_agents_and_tasks()
+    crew, context_task, web_search_task, response_task = create_agents_and_tasks(tipo)
 
     # Carregar contexto dos certificados
     context = carregar_certificados()
@@ -152,8 +152,8 @@ def kickoff(question):
     # Pesquisar na web sobre o assunto da pergunta
     web_info = pesquisar_na_web(question)
 
-    # Chamar a OpenAI com ambos os contextos
-    result = ask_openai(question, context, web_info)
+    # Chamar a OpenAI com ambos os contextos e tipo
+    result = ask_openai(question, context, web_info, tipo)
 
     return {
         "crew": crew.dict(),
